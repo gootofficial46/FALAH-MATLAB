@@ -1,14 +1,13 @@
-% Adjusted Sleep Detection with Transition Smoothing and Gap-Filling
+% Sleep Detection with Standardized Thresholds Based on Participant Median
 
 % Parameters
-windowSize = 60; % Rolling window size in minutes for smoothing
-dailyNightPercentile = 25; % Nighttime activity threshold (25th percentile per day)
+windowSize = 15; % Rolling window size in minutes for smoothing
+thresholdPercentage = 0.25; % Nighttime threshold as 25% of participant's median activity
 minContinuousSleep = 20; % Minimum continuous low activity (minutes)
 minSleepDuration = 45; % Minimum sleep duration in minutes
 mergeGap = 90; % Minutes to merge short breaks in sleep periods
 nightStartHour = 20; % Sleep opportunity window starts at 8 PM
 nightEndHour = 8; % Sleep opportunity window ends at 8 AM
-gapFillingThreshold = 35; % Activity threshold for gap filling (percentile of nighttime activity)
 
 % Allow user to select multiple files
 [fileNames, pathName] = uigetfile('*.csv', 'Select Actigraphy Data Files', 'MultiSelect', 'on');
@@ -45,8 +44,14 @@ for fIdx = 1:length(fileNames)
     time = datetime(data{:, timeCol}, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');
     activity = data{:, activityCol};
 
+    % Calculate participant median activity level
+    participantMedian = median(activity);
+
+    % Define threshold based on participant's median activity
+    threshold = thresholdPercentage * participantMedian;
+
     % Smooth activity using a rolling median
-    smoothedActivity = movmedian(activity, windowSize);
+    smoothedActivity = movmean(activity, windowSize);
 
     % Separate data by day
     uniqueDates = unique(dateshift(time, 'start', 'day'));
@@ -68,11 +73,8 @@ for fIdx = 1:length(fileNames)
             continue; % Skip if no nighttime data available
         end
 
-        % Calculate dynamic threshold for the current day
-        nightThreshold = prctile(nightActivity, dailyNightPercentile);
-
         % Detect low activity periods for the night
-        lowActivity = nightActivity < nightThreshold;
+        lowActivity = nightActivity < threshold;
 
         % Cumulative sleep detection
         cumulativeSleep = 0; % Reset cumulative counter
@@ -86,19 +88,6 @@ for fIdx = 1:length(fileNames)
 
             if cumulativeSleep >= minContinuousSleep
                 detectedSleep(i - cumulativeSleep + 1:i) = true;
-            end
-        end
-
-        % Gap-filling: Fill gaps between detected sleep periods
-        sleepStartIdx = find(diff([0; detectedSleep]) == 1);
-        sleepEndIdx = find(diff([detectedSleep; 0]) == -1);
-
-        for i = 1:length(sleepEndIdx)-1
-            gapStart = sleepEndIdx(i) + 1;
-            gapEnd = sleepStartIdx(i+1) - 1;
-
-            if all(nightActivity(gapStart:gapEnd) < prctile(nightActivity, gapFillingThreshold))
-                detectedSleep(gapStart:gapEnd) = true; % Fill the gap
             end
         end
 
