@@ -1,8 +1,8 @@
 % Sleep Detection with Standardized Thresholds Based on Participant Median
 
 % Parameters
-windowSize = 15; % Rolling window size in minutes for smoothing
-thresholdPercentage = 0.25; % Nighttime threshold as 25% of participant's median activity
+windowSize = 5; % Rolling window size in minutes for smoothing
+thresholdPercentage = 0.10; % Nighttime threshold as 25% of participant's median activity
 minContinuousSleep = 20; % Minimum continuous low activity (minutes)
 minSleepDuration = 45; % Minimum sleep duration in minutes
 mergeGap = 90; % Minutes to merge short breaks in sleep periods
@@ -51,7 +51,7 @@ for fIdx = 1:length(fileNames)
     threshold = thresholdPercentage * participantMedian;
 
     % Smooth activity using a rolling median
-    smoothedActivity = movmean(activity, windowSize);
+    smoothedActivity = movmedian(activity, windowSize);
 
     % Separate data by day
     uniqueDates = unique(dateshift(time, 'start', 'day'));
@@ -138,8 +138,9 @@ for fIdx = 1:length(fileNames)
     end
     xlabel('Time');
     ylabel('Activity Count');
-    title(sprintf('Refined Sleep Detection: %s', fileNames{fIdx}));
-    legend('Activity Count', 'Sleep Periods');
+    title(sprintf('Refined Sleep Detection: %s', fileNames{fIdx}), 'Interpreter', 'none');
+    h = findobj(gca, 'Type', 'line'); % Find all line objects in the current axes
+    legend(h, {'Activity Count', 'Sleep Periods'}); % Assign legend only to existing plotted elements
     grid on;
     hold off;
 

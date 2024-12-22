@@ -1,0 +1,75 @@
+% Define the .csv file
+csvFile = 'part4_nightsummary_sleep_cleaned.csv';
+
+% Specify the column name that contains IDs
+idColumn = 'filename';
+
+% Specify the columns to be read for sleep onset and wake time
+sleepOnsetColumn = 'sleeponset_ts'; % Column for sleep onset times
+wakeTimeColumn = 'wakeup_ts';     % Column for wake times
+
+% Step 1: Read the CSV file
+try
+    dataTable = readtable(csvFile);
+catch
+    error('Failed to read the CSV file. Ensure the file "%s" exists and is properly formatted.', csvFile);
+end
+
+% Step 2: Check if required columns exist
+requiredColumns = {idColumn, sleepOnsetColumn, wakeTimeColumn};
+missingColumns = setdiff(requiredColumns, dataTable.Properties.VariableNames);
+if ~isempty(missingColumns)
+    error('The following columns are missing in the data: %s', strjoin(missingColumns, ', '));
+end
+
+% Step 3: Clean and convert time columns to datetime
+try
+    dataTable.(sleepOnsetColumn) = robustDatetimeConversion(dataTable.(sleepOnsetColumn), sleepOnsetColumn);
+    dataTable.(wakeTimeColumn) = robustDatetimeConversion(dataTable.(wakeTimeColumn), wakeTimeColumn);
+catch ME
+    rethrow(ME);
+end
+
+% Step 4: Group data by unique IDs and calculate sleep midpoint
+uniqueIDs = unique(dataTable.(idColumn));
+for i = 1:length(uniqueIDs)
+    currentID = uniqueIDs{i};
+    
+    % Filter the data for the current ID
+    filteredData = dataTable(strcmp(dataTable.(idColumn), currentID), :);
+    
+    % Calculate the sleep midpoint for each row
+    sleepMidpoints = filteredData.(sleepOnsetColumn) + (filteredData.(wakeTimeColumn) - filteredData.(sleepOnsetColumn)) / 2;
+    
+    % Add the sleep midpoint as a new column
+    filteredData.SleepMidpoint = sleepMidpoints;
+    
+    % Display the grouped data under the ID heading
+    fprintf('\nData for ID: %s\n', currentID);
+    disp(filteredData(:, {sleepOnsetColumn, wakeTimeColumn, 'SleepMidpoint'}));
+end
+
+% Helper function for robust datetime conversion
+function datetimeColumn = robustDatetimeConversion(columnData, columnName)
+    % List of common time formats to try
+    possibleFormats = {'HH:mm:ss', 'HH:mm', 'hh:mm a', 'yyyy-MM-dd HH:mm:ss', 'MM/dd/yyyy HH:mm:ss'};
+    datetimeColumn = [];
+    
+    % Display the first few rows of the column for debugging
+    fprintf('Inspecting column "%s" for datetime conversion:\n', columnName);
+    disp(head(columnData, 10));
+    
+    for fmtIdx = 1:length(possibleFormats)
+        try
+            % Attempt conversion using the current format
+            datetimeColumn = datetime(columnData, 'InputFormat', possibleFormats{fmtIdx});
+            fprintf('Successfully converted column "%s" using format "%s".\n', columnName, possibleFormats{fmtIdx});
+            return;
+        catch
+            % Continue to the next format if this one fails
+        end
+    end
+    
+    % If no format worked, throw an error and suggest manual inspection
+    error('Failed to convert column "%s" to datetime. Manually inspect data or specify a new format.', columnName);
+end
