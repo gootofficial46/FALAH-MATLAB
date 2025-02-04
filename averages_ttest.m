@@ -37,6 +37,9 @@ semWeekend = std(weekendMidpoints) / sqrt(length(weekendMidpoints));
 % Perform Paired t-test
 [h, p, ci, stats] = ttest(weekdayMidpoints, weekendMidpoints);
 
+% Calculate Degrees of Freedom
+degrees_of_freedom = length(weekdayMidpoints) - 1;
+
 % Function to Convert Decimal Hours to HH:MM:SS Format
 convertToTimestamp = @(decimalHours) sprintf('%02d:%02d:%02d', ...
     floor(decimalHours), ...                   % Hours
@@ -57,6 +60,7 @@ fprintf('\n*** Whole Population ***\n');
 fprintf('Mean Weekday Sleep Midpoint: %s ± %s\n', meanWeekday_str, semWeekday_str);
 fprintf('Mean Weekend Sleep Midpoint: %s ± %s\n', meanWeekend_str, semWeekend_str);
 fprintf('t-Statistic: %.4f\n', stats.tstat);
+fprintf('Degrees of Freedom: %d\n', degrees_of_freedom);
 fprintf('p-Value: %.4f\n', p);
 fprintf('Confidence Interval: [%s, %s]\n', ci_str(1), ci_str(2));
 

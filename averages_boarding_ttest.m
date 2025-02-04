@@ -1,15 +1,15 @@
 % MATLAB Script: Sleep Midpoint T-Test for Boarding Groups
 % Reads an Excel file, re-averages onset/offset times, groups participants by boarding status,
-% correctly shifts sleep midpoints to nighttime range, and performs t-tests.
+% correctly shifts sleep midpoints to nighttime range, and performs t-tests including degrees of freedom.
 
 % Load the data
 filePath = 'Averaged_Sleep_Data.xlsx';
 data = readtable(filePath, 'TextType', 'string'); % Read text to avoid formatting issues
 
 % Ensure necessary columns exist
-requiredColumns = {'participantID', 'boardingStatus', 'avg_weekend_sleeponset', 'avg_weekend_wakeup', ...
-                   'avg_weekend_sleepDuration', 'avg_weekend_sleepMidpoint', 'avg_weekday_sleeponset', 'avg_weekday_wakeup',...
-                   'avg_weekday_sleepDuration', 'avg_weekday_sleepMidpoint', 'rural_urban'};
+requiredColumns = {'participantID', 'boardingStatus', 'avg_weekday_sleeponset', 'avg_weekday_wakeup', ...
+                   'avg_weekday_sleepDuration', 'avg_weekday_sleepMidpoint', 'avg_weekend_sleeponset', 'avg_weekend_wakeup', ...
+                   'avg_weekend_sleepDuration', 'avg_weekend_sleepMidpoint', 'rural_urban'};
 if ~all(ismember(requiredColumns, data.Properties.VariableNames))
     error('The required columns are missing from the dataset.');
 end
@@ -88,8 +88,10 @@ function perform_analysis(groupName, weekday, weekend)
         
         % Perform t-test
         [~, p, ~, stats] = ttest(weekday, weekend);
+        df = numel(weekday) - 1; % Degrees of freedom for paired t-test
         fprintf('Paired t-test results (Weekday vs. Weekend Sleep Midpoint):\n');
         fprintf('t-statistic: %.4f\n', stats.tstat);
+        fprintf('Degrees of Freedom (df): %d\n', df);
         fprintf('p-value: %.4f\n', p);
         
         % Interpretation
