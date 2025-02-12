@@ -33,16 +33,16 @@ end
 % Plot histograms for weekday and weekend nights
 figure;
 histogram(weekdayCounts);
-title('Histogram of Weekday Nights');
-xlabel('Number of Weekday Nights');
-ylabel('Number of Participants');
+title('Histogram of Weekday Nights', FontSize=20);
+xlabel('Number of Weekday Nights', FontSize=16);
+ylabel('Number of Participants', FontSize=16);
 grid on;
 
 figure;
 histogram(weekendCounts);
-title('Histogram of Weekend Nights');
-xlabel('Number of Weekend Nights');
-ylabel('Number of Participants');
+title('Histogram of Weekend Nights', FontSize=20);
+xlabel('Number of Weekend Nights', FontSize=16);
+ylabel('Number of Participants', FontSize=16);
 grid on;
 
 % Count the number of participants with sleep data for each day of the week
